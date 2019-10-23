@@ -6,10 +6,14 @@
 
 
 
+
+
 //----------VARIABLES----------//
 //-----------------------------//
 
 var Question_Current = 0;
+var time_Initial = 75, time_Cur = 75;
+var stage_cur = "main";
 
 var HTML =
 {
@@ -66,15 +70,18 @@ var HTML =
         },
         testing: {
             mText: [
-                $("<h6>").text("Q1"),
-                $("<h6>").text("Q2"),
-                $("<h6>").text("Q3")
+                $("<h6>").text("1. Which of the following is NOT a commonly used data type?"),
+                $("<h6>").text("2. An 'if' condition can be followed by what other condition?"),
+                $("<h6>").text("3. Which of these languages is a superset of JavaScript?"),
+                $("<h6>").text("4. What is Bootrap?"),
+                $("<h6>").text("4. What is one benefit of using fat arrows?")
             ],
             mClasses: "ml-3"
         },
         finished: {
             mText: $("<h3>").text("Quiz Complete!"),
-            mClasses: "mx-auto"
+            mClasses: "mx-auto",
+            mID : "prompt-text"
         },
         highscores: {
             mText: $("<h3>").text("Highscores"),
@@ -96,21 +103,42 @@ var HTML =
                 $("<button>").text("B3"),
                 $("<button>").text("B4")
             ],
-            mClasses: "btn btn-primary my-2 col",
+            mClasses: "btn btn-primary my-2 col col-md-6 mx-md-2",
             mID: "btn",
             mAnswerSets:[
-                ["B1 : blah, blah", "B2 : blah, blah", "B3 : blah, blah", "B4 : blah, blah"],
-                ["B1-1 : blah, blah", "B2-1 : blah, blah", "B3-1 : blah, blah", "B4-1 : blah, blah"],
-                ["B1-2 : blah, blah", "B2-2 : blah, blah", "B3-2 : blah, blah", "B4-2 : blah, blah"],
-                ["B1-3 : blah, blah", "B2-3 : blah, blah", "B3-3 : blah, blah", "B4-3 : blah, blah"]
+                ["A) strings", "B) booleans", "C) numbers", "D) alerts"],
+                ["A) else", "B) otherwise", "C) instead", "D) or if"],
+                ["A) C#", "B) Linux", "C) Java", "D) TypeScript"],
+                ["A) A paid service", "B) A front-end framework", "C) A full-stack framework", "D) A programming language"],
+                ["A) It contextualizes the function", "B) It makes the function an object", "C) It makes the function an event", "D) It's useless"]
             ],
 
             mAnswerSets_Correct:[
+                4,
                 1,
+                4,
                 2,
-                3,
-                4
+                1
             ]
+        },
+        finished: {
+            mText: $("<input>").text("Initials"),
+            mClasses: "input-group-text",
+            mID: "input-initials",
+            mAriaLabel: "initials"
+        }
+    },
+
+    footer: {
+        mDiv:$("#footer"),
+        main: {
+
+        },
+        testing: {
+
+        },
+        finished: {
+
         }
     }
 };
@@ -120,6 +148,7 @@ var HTML =
 
 //Set up the elements of the 'main' display.
 function SetMainElements() {
+    stage_cur = "main";
     console.log("Setting up main elements...");
     HTML.topLeft.mDiv.empty();
     HTML.topRight.mDiv.empty();
@@ -129,6 +158,7 @@ function SetMainElements() {
 
     var $iTopLeft = ModifyText(HTML.topLeft.main);
     HTML.topLeft.mDiv.append($iTopLeft);
+
 
     var $iTopRight = ModifyText(HTML.topRight.main);
     HTML.topRight.mDiv.append($iTopRight);
@@ -142,48 +172,64 @@ function SetMainElements() {
 
 //Sets up the elements of the 'testing' display.
 function SetTestingElements() {
+    stage_cur = "testing";
     console.log("Setting up testing elements...");
+    
+    
     HTML.topLeft.mDiv.empty();
     HTML.topRight.mDiv.empty();
     HTML.prompt.mDiv.empty();
     HTML.buttonList.mDiv.empty();
-
+    
     var $iTopLeft = ModifyText(HTML.topLeft.testing);
     HTML.topLeft.mDiv.append($iTopLeft);
-
+    
     var $iTopRight = ModifyText(HTML.topRight.testing);
     HTML.topRight.mDiv.append($iTopRight);
-
+    
     var $iPrompt = ModifyText(HTML.prompt.testing, 0);
     HTML.prompt.mDiv.append($iPrompt);
-
+    
     for (var i = 0; i < HTML.buttonList.testing.mText.length; i++) {
         var $iButton = ModifyText(HTML.buttonList.testing, i);
         HTML.buttonList.mDiv.append($iButton);
     }
-
+    
     RunQuiz(0);
+    StartTimer();
 }
 
 //Sets up the elements of the 'finished' display.
 function SetFinishedElements() {
+    stage_cur = "finished";
     console.log("Setting up Finished elements...");
     HTML.topLeft.mDiv.empty();
     HTML.topRight.mDiv.empty();
     HTML.prompt.mDiv.empty();
+    HTML.buttonList.mDiv.empty();
 
     var $iTopLeft = ModifyText(HTML.topLeft.finished);
     HTML.topLeft.mDiv.append($iTopLeft);
 
     var $iTopRight = ModifyText(HTML.topRight.finished);
     HTML.topRight.mDiv.append($iTopRight);
+    
+    var $iTimer = $("#timer");
+    var $iSpan = $("<span>").text(time_Cur);
+    $iTimer.append($iSpan);
 
     var $iPrompt = ModifyText(HTML.prompt.finished);
     HTML.prompt.mDiv.append($iPrompt);
+
+    var $iButtonList = ModifyText(HTML.buttonList.finished);
+    HTML.buttonList.mDiv.append($iButtonList);
+
+    EndTimer(timer);
 }
 
 //Sets up the elements of the 'Highscores' display.
 function SetHSElements() {
+    stage_cur = "highscores";
     console.log("Setting up Highscore elements...");
     HTML.topLeft.mDiv.empty();
 
@@ -208,6 +254,8 @@ function ModifyText(pPrefix, pIndex) {
 
     $iDiv.attr("id", pPrefix.mID);
     $iDiv.attr("class", pPrefix.mClasses);
+    $iDiv.attr("aria-label", pPrefix.mAriaLabel);
+    $iDiv.attr("placeholder", pPrefix.mAriaLabel);
 
     return $iDiv;
 }
@@ -219,12 +267,18 @@ function RunQuiz(pIndex) {
     if (pIndex < HTML.prompt.testing.mText.length) {
         var $iQuestion = ModifyText(HTML.prompt.testing, pIndex);
         HTML.prompt.mDiv.append($iQuestion);
+        
+        for (var i = 0; i < HTML.buttonList.testing.mText.length; i++) {
+            var iAnswer = HTML.buttonList.testing.mAnswerSets[pIndex][i];
+            $(HTML.buttonList.mDiv.children()[i]).text(iAnswer);
+        }
+        
         Question_Current++;
-
         AssignCurrentRightAnswer(pIndex);
     }
     else {
         console.log("Quiz over");
+        EndTimer();
         SetFinishedElements();
         Question_Current = 0;
     }
@@ -263,6 +317,49 @@ function AssignCurrentRightAnswer(pIndex)
     {
         console.error("Attempting to grab a 'rightAnswer' which is not a number");
     }
+}
+
+/*Time functions*/
+/****************/
+
+function StartTimer()
+{
+    time_Cur = time_Initial;
+    $timer = $("#timer");
+    $span = $("<span>").text(time_Cur);
+    $timer.append($span);
+
+    timer = setInterval(function()
+    {
+        time_Cur--;
+
+        $span.text(time_Cur);
+        
+        if(time_Cur <= 0)
+        {
+            time_Cur = 0;
+            TimeUp();
+        }
+
+    }, 1000)
+}
+
+function EndTimer()
+{
+    clearInterval(timer);
+}
+
+function TimeUp()
+{
+    clearInterval(timer);
+    SetFinishedElements();
+
+    $("#prompt-text").text("No Time!");
+}
+
+function DeductTime()
+{
+    time_Cur -= 15;
 }
 
 
@@ -321,9 +418,15 @@ $("#button-list").on("click", function (e) {
             alert("You're right!");
             RunQuiz(Question_Current);
             break;
+        case "input-initials":
+            break;
         default:
-            alert("Wrong answer");
-            RunQuiz(Question_Current);
+            if(stage_cur === "testing")
+            {
+                alert("Wrong answer");
+                RunQuiz(Question_Current);
+                DeductTime();
+            }
             break;
     }
 })
